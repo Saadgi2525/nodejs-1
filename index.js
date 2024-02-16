@@ -1,11 +1,18 @@
 const express = require('express');
 const path = require('path'); 
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const UserSchema = require('./Schema/user');
 
-app.use(express.json()); 
+const app = express();
+
+mongoose.connect('mongodb://0.0.0.0:27017/Workshop')
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.log(err));
 
 const PORT = process.env.PORT || 3000;
 
-app.get('/', async (req, res) => {
+app.get('/register', async (req, res) => {
     try {
         res.sendFile(path.join(__dirname, 'index.html'));
     } catch (error) {
@@ -14,22 +21,29 @@ app.get('/', async (req, res) => {
     }
 });
 
-app.post('/', (req, res) => {
-    // Assuming you have a User model and MongoDB/Mongoose configured
-    const { name, email, password } = req.body;
-    // Create a new user record in your database
-    // Example using Mongoose
-    const newUser = new User({ name, email, password });
-    newUser.save()
+app.post('/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        console.log(req.body);
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const User = mongoose.model('User', UserSchema); // Create model here
+        const user = new User({ username: name, email, password: hashedPassword });
+        await user.save()
         .then(() => {
             // Redirect to the dashboard of your e-commerce website upon successful registration
-            res.redirect('https://your-ecommerce-website.com/dashboard');
+            res.redirect('/dashboard');
         })
         .catch(err => {
             console.error(err);
             res.status(500).send('Registration failed');
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error registering user');
+    }
 });
+
+const User = mongoose.model('User', UserSchema);
 
 app.listen(PORT, () => {
     console.log(`Application started at port ${PORT}`);
