@@ -1,5 +1,6 @@
 const express = require('express');
-const path = require('path'); 
+const bodyParser = require('body-parser'); // Require body-parser
+const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const UserSchema = require('./Schema/user');
@@ -11,6 +12,10 @@ mongoose.connect('mongodb://0.0.0.0:27017/Workshop')
     .catch(err => console.log(err));
 
 const PORT = process.env.PORT || 3000;
+
+// Configure body-parser middleware
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.get('/register', async (req, res) => {
     try {
@@ -26,7 +31,7 @@ app.post('/register', async (req, res) => {
         const { name, email, password } = req.body;
         console.log(req.body);
         const hashedPassword = await bcrypt.hash(password, 10);
-        const User = mongoose.model('User', UserSchema); // Create model here
+        const User = mongoose.model('User', UserSchema);
         const user = new User({ username: name, email, password: hashedPassword });
         await user.save()
         .then(() => {
